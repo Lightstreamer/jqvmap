@@ -62,7 +62,7 @@
 
       this.data('mapObject', map);
 
-      this.unbind('.jqvmap');
+      this.off('.jqvmap');
 
       for (var e in apiEvents) {
         if (defaultParams[e]) {

@@ -88,7 +88,7 @@ var JQVMap = function (params) {
     jQuery(this.rootGroup).append(path);
   }
 
-  jQuery(params.container).delegate(this.canvas.mode === 'svg' ? 'path' : 'shape', 'mouseover mouseout', function (e) {
+  jQuery(params.container).on('mouseover mouseout', this.canvas.mode === 'svg' ? 'path' : 'shape', function (e) {
     var containerPath = e.target,
       code = e.target.id.split('_').pop(),
       labelShowEvent = jQuery.Event('labelShow.jqvmap'),
@@ -119,7 +119,7 @@ var JQVMap = function (params) {
     }
   });
 
-  jQuery(params.container).delegate(this.canvas.mode === 'svg' ? 'path' : 'shape', 'click', function (regionClickEvent) {
+  jQuery(params.container).on('click', this.canvas.mode === 'svg' ? 'path' : 'shape', function (regionClickEvent) {
 
     var targetPath = regionClickEvent.target;
     var code = regionClickEvent.target.id.split('_').pop();

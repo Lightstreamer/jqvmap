@@ -152,6 +152,6 @@ JQVMap.prototype.makeDraggable = function () {
     }
   });
 
-  jQuery(this.container).bind('touchstart', handleTouchEvent);
-  jQuery(this.container).bind('touchmove', handleTouchEvent);
+  jQuery(this.container).on('touchstart', handleTouchEvent);
+  jQuery(this.container).on('touchmove', handleTouchEvent);
 };
