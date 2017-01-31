@@ -16,6 +16,7 @@ module.exports = {
 				"src/ColorScale.js",
 				"src/JQVMap.js",
 				"src/Base.js",
+				"src/HslUtil.js",
 				"src/**/*.js"
 			]
 		}

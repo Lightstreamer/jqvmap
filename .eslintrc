@@ -3,7 +3,8 @@
     "jQuery": true,
     "JQVMap": true,
     "VectorCanvas": true,
-    "ColorScale": true
+    "ColorScale": true,
+    "HslUtil": true
   },
   "env": {
     "browser": true

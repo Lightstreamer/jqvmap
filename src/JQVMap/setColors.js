@@ -7,8 +7,14 @@ JQVMap.prototype.setColors = function (key, color) {
 
     for (var code in colors) {
       if (this.countries[code]) {
-        this.countries[code].setFill(colors[code]);
-        this.countries[code].setAttribute('original', colors[code]);
+        var path = this.countries[code],
+            newColor = colors[code];
+
+        var res = this.animateFill(path, newColor);
+        if(!res) {
+          path.setFill(newColor);
+          path.setAttribute('original', newColor);
+        }
       }
     }
   }
