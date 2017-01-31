@@ -13,5 +13,12 @@ JQVMap.prototype.zoomOut = function () {
     $slider.css('top', parseInt($slider.css('top'), 10) + sliderDelta);
 
     map.container.trigger('zoomOut');
+
+    map.zoomInBtn.prop('disabled', false);
+    map.zoomInBtn.css('opacity', '1');
+    if (map.zoomCurStep === 1) {
+      map.zoomOutBtn.prop('disabled', true);
+      map.zoomOutBtn.css('opacity', '0.4');
+    }
   }
 };

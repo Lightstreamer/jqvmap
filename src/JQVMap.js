@@ -61,8 +61,11 @@ var JQVMap = function (params) {
   this.label = jQuery('<div/>').addClass('jqvmap-label').appendTo(jQuery('body')).hide();
 
   if (params.enableZoom) {
-    jQuery('<div/>').addClass('jqvmap-zoomin').text('+').appendTo(params.container);
-    jQuery('<div/>').addClass('jqvmap-zoomout').html('&#x2212;').appendTo(params.container);
+    this.zoomInBtn = jQuery('<div/>').addClass('jqvmap-zoomin').text('+');
+    this.zoomOutBtn = jQuery('<div/>').addClass('jqvmap-zoomout').html('&#x2212;');
+
+    this.zoomInBtn.appendTo(params.container);
+    this.zoomOutBtn.appendTo(params.container);
   }
 
   map.countries = [];
