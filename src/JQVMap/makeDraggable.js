@@ -14,67 +14,16 @@ JQVMap.prototype.makeDraggable = function () {
   var touchX;
   var touchY;
 
-  this.container.mousemove(function (e) {
-
-    if (mouseDown) {
-      self.transX -= (oldPageX - e.pageX) / self.scale;
-      self.transY -= (oldPageY - e.pageY) / self.scale;
-
-      self.applyTransform();
-
-      oldPageX = e.pageX;
-      oldPageY = e.pageY;
-
-      self.isMoving = true;
-      if (self.isMovingTimeout) {
-        clearTimeout(self.isMovingTimeout);
-      }
-
-      self.container.trigger('drag');
-    }
-
-    return false;
-
-  }).mousedown(function (e) {
-
-    mouseDown = true;
-    oldPageX = e.pageX;
-    oldPageY = e.pageY;
-
-    return false;
-
-  }).mouseup(function () {
-
-    mouseDown = false;
-
-    clearTimeout(self.isMovingTimeout);
-    self.isMovingTimeout = setTimeout(function () {
-      self.isMoving = false;
-    }, 100);
-
-    return false;
-
-  }).mouseout(function () {
-
-    if(mouseDown && self.isMoving){
-
-      clearTimeout(self.isMovingTimeout);
-      self.isMovingTimeout = setTimeout(function () {
-        mouseDown = false;
-        self.isMoving = false;
-      }, 100);
-
-      return false;
-    }
-  });
-
-  jQuery(this.container).bind('touchmove', function (e) {
-
+  var handleTouchEvent = function(e) {
     var offset;
     var scale;
     var touches = e.originalEvent.touches;
     var transformXOld;
     var transformYOld;
+
+    if (e.type === 'touchstart') {
+      lastTouchCount = 0;
+    }
 
     if (touches.length === 1) {
       if (lastTouchCount === 1) {
@@ -147,13 +96,62 @@ JQVMap.prototype.makeDraggable = function () {
     }
 
     lastTouchCount = touches.length;
+  };
+
+  this.container.mousemove(function (e) {
+
+    if (mouseDown) {
+      self.transX -= (oldPageX - e.pageX) / self.scale;
+      self.transY -= (oldPageY - e.pageY) / self.scale;
+
+      self.applyTransform();
+
+      oldPageX = e.pageX;
+      oldPageY = e.pageY;
+
+      self.isMoving = true;
+      if (self.isMovingTimeout) {
+        clearTimeout(self.isMovingTimeout);
+      }
+
+      self.container.trigger('drag');
+    }
+
+    return false;
+
+  }).mousedown(function (e) {
+
+    mouseDown = true;
+    oldPageX = e.pageX;
+    oldPageY = e.pageY;
+
+    return false;
+
+  }).mouseup(function () {
+
+    mouseDown = false;
+
+    clearTimeout(self.isMovingTimeout);
+    self.isMovingTimeout = setTimeout(function () {
+      self.isMoving = false;
+    }, 100);
+
+    return false;
+
+  }).mouseout(function () {
+
+    if(mouseDown && self.isMoving){
+
+      clearTimeout(self.isMovingTimeout);
+      self.isMovingTimeout = setTimeout(function () {
+        mouseDown = false;
+        self.isMoving = false;
+      }, 100);
+
+      return false;
+    }
   });
 
-  jQuery(this.container).bind('touchstart', function () {
-    lastTouchCount = 0;
-  });
-
-  jQuery(this.container).bind('touchend', function () {
-    lastTouchCount = 0;
-  });
+  jQuery(this.container).bind('touchstart', handleTouchEvent);
+  jQuery(this.container).bind('touchmove', handleTouchEvent);
 };
