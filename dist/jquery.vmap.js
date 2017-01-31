@@ -4,7 +4,7 @@
  * @version 1.5.1
  * @link http://jqvmap.com
  * @license https://github.com/manifestinteractive/jqvmap/blob/master/LICENSE
- * @builddate 2016/06/02
+ * @builddate 2017/01/31
  */
 
 var VectorCanvas = function (width, height, params) {
@@ -132,8 +132,11 @@ var JQVMap = function (params) {
   this.label = jQuery('<div/>').addClass('jqvmap-label').appendTo(jQuery('body')).hide();
 
   if (params.enableZoom) {
-    jQuery('<div/>').addClass('jqvmap-zoomin').text('+').appendTo(params.container);
-    jQuery('<div/>').addClass('jqvmap-zoomout').html('&#x2212;').appendTo(params.container);
+    this.zoomInBtn = jQuery('<div/>').addClass('jqvmap-zoomin').text('+');
+    this.zoomOutBtn = jQuery('<div/>').addClass('jqvmap-zoomout').html('&#x2212;');
+
+    this.zoomInBtn.appendTo(params.container);
+    this.zoomOutBtn.appendTo(params.container);
   }
 
   map.countries = [];
@@ -156,7 +159,7 @@ var JQVMap = function (params) {
     jQuery(this.rootGroup).append(path);
   }
 
-  jQuery(params.container).delegate(this.canvas.mode === 'svg' ? 'path' : 'shape', 'mouseover mouseout', function (e) {
+  jQuery(params.container).on('mouseover mouseout', this.canvas.mode === 'svg' ? 'path' : 'shape', function (e) {
     var containerPath = e.target,
       code = e.target.id.split('_').pop(),
       labelShowEvent = jQuery.Event('labelShow.jqvmap'),
@@ -187,7 +190,7 @@ var JQVMap = function (params) {
     }
   });
 
-  jQuery(params.container).delegate(this.canvas.mode === 'svg' ? 'path' : 'shape', 'click', function (regionClickEvent) {
+  jQuery(params.container).on('click', this.canvas.mode === 'svg' ? 'path' : 'shape', function (regionClickEvent) {
 
     var targetPath = regionClickEvent.target;
     var code = regionClickEvent.target.id.split('_').pop();
@@ -377,7 +380,7 @@ JQVMap.maps = {};
 
       this.data('mapObject', map);
 
-      this.unbind('.jqvmap');
+      this.off('.jqvmap');
 
       for (var e in apiEvents) {
         if (defaultParams[e]) {
@@ -393,6 +396,34 @@ JQVMap.maps = {};
   };
 
 })(jQuery);
+
+var HslUtil = {};
+
+HslUtil.clamp = function (num, min, max) {
+  return Math.min(Math.max(min, num), max);
+};
+
+HslUtil.parseHsl = function (string) {
+  if (!string) {
+    return null;
+  }
+
+  var hsl = /^hsla?\(\s*([+-]?\d*[\.]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+  var match = string.match(hsl);
+
+  if (match) {
+    return {
+      h: ((parseFloat(match[1]) % 360) + 360) % 360,
+      s: HslUtil.clamp(parseFloat(match[2]), 0, 100),
+      l: HslUtil.clamp(parseFloat(match[3]), 0, 100)
+    };
+  }
+  return null;
+};
+
+HslUtil.toHsl = function (hue) {
+  return ['hsl(', hue, ', 100%, 50%)'].join('');
+};
 
 ColorScale.arrayToRgb = function (ar) {
   var rgb = '#';
@@ -531,6 +562,57 @@ ColorScale.prototype.vectorToNum = function (vector) {
   return num;
 };
 
+JQVMap.prototype.animateFill = function (path, next) {
+  next = HslUtil.parseHsl(next);
+  var current = HslUtil.parseHsl(path.getFill());
+
+  if(!current || !next) {
+    return null;
+  }
+
+  var delta = next.h - current.h;
+
+  if(delta === 0) {
+    return null;
+  }
+
+  var h,
+      steps = [],
+      stepSize = 1;
+
+  for (var i = 0; i < Math.abs(delta); i = i + stepSize) {
+    if (delta < 0) {
+      h = current.h - i;
+    } else {
+      h = current.h + i;
+    }
+
+    steps.push(HslUtil.toHsl(h));
+  }
+
+  var s = steps.length,
+      c = 0;
+
+  function animate() {
+
+    if(c === s) {
+      path.setAttribute('original', steps[c - 1]);
+      return;
+    }
+
+    path.setFill(steps[c]);
+    c++;
+
+    // request another loop of animation
+    requestAnimationFrame(animate);
+  }
+
+  // start the animation
+  requestAnimationFrame(animate);
+
+  return true;
+};
+
 JQVMap.prototype.applyTransform = function () {
   var maxTransX, maxTransY, minTransX, minTransY;
   if (this.defaultWidth * this.scale <= this.width) {
@@ -650,67 +732,16 @@ JQVMap.prototype.makeDraggable = function () {
   var touchX;
   var touchY;
 
-  this.container.mousemove(function (e) {
-
-    if (mouseDown) {
-      self.transX -= (oldPageX - e.pageX) / self.scale;
-      self.transY -= (oldPageY - e.pageY) / self.scale;
-
-      self.applyTransform();
-
-      oldPageX = e.pageX;
-      oldPageY = e.pageY;
-
-      self.isMoving = true;
-      if (self.isMovingTimeout) {
-        clearTimeout(self.isMovingTimeout);
-      }
-
-      self.container.trigger('drag');
-    }
-
-    return false;
-
-  }).mousedown(function (e) {
-
-    mouseDown = true;
-    oldPageX = e.pageX;
-    oldPageY = e.pageY;
-
-    return false;
-
-  }).mouseup(function () {
-
-    mouseDown = false;
-
-    clearTimeout(self.isMovingTimeout);
-    self.isMovingTimeout = setTimeout(function () {
-      self.isMoving = false;
-    }, 100);
-
-    return false;
-
-  }).mouseout(function () {
-
-    if(mouseDown && self.isMoving){
-
-      clearTimeout(self.isMovingTimeout);
-      self.isMovingTimeout = setTimeout(function () {
-        mouseDown = false;
-        self.isMoving = false;
-      }, 100);
-
-      return false;
-    }
-  });
-
-  jQuery(this.container).bind('touchmove', function (e) {
-
+  var handleTouchEvent = function(e) {
     var offset;
     var scale;
     var touches = e.originalEvent.touches;
     var transformXOld;
     var transformYOld;
+
+    if (e.type === 'touchstart') {
+      lastTouchCount = 0;
+    }
 
     if (touches.length === 1) {
       if (lastTouchCount === 1) {
@@ -783,15 +814,64 @@ JQVMap.prototype.makeDraggable = function () {
     }
 
     lastTouchCount = touches.length;
+  };
+
+  this.container.mousemove(function (e) {
+
+    if (mouseDown) {
+      self.transX -= (oldPageX - e.pageX) / self.scale;
+      self.transY -= (oldPageY - e.pageY) / self.scale;
+
+      self.applyTransform();
+
+      oldPageX = e.pageX;
+      oldPageY = e.pageY;
+
+      self.isMoving = true;
+      if (self.isMovingTimeout) {
+        clearTimeout(self.isMovingTimeout);
+      }
+
+      self.container.trigger('drag');
+    }
+
+    return false;
+
+  }).mousedown(function (e) {
+
+    mouseDown = true;
+    oldPageX = e.pageX;
+    oldPageY = e.pageY;
+
+    return false;
+
+  }).mouseup(function () {
+
+    mouseDown = false;
+
+    clearTimeout(self.isMovingTimeout);
+    self.isMovingTimeout = setTimeout(function () {
+      self.isMoving = false;
+    }, 100);
+
+    return false;
+
+  }).mouseout(function () {
+
+    if(mouseDown && self.isMoving){
+
+      clearTimeout(self.isMovingTimeout);
+      self.isMovingTimeout = setTimeout(function () {
+        mouseDown = false;
+        self.isMoving = false;
+      }, 100);
+
+      return false;
+    }
   });
 
-  jQuery(this.container).bind('touchstart', function () {
-    lastTouchCount = 0;
-  });
-
-  jQuery(this.container).bind('touchend', function () {
-    lastTouchCount = 0;
-  });
+  jQuery(this.container).on('touchstart', handleTouchEvent);
+  jQuery(this.container).on('touchmove', handleTouchEvent);
 };
 
 JQVMap.prototype.placePins = function(pins, pinMode){
@@ -853,17 +933,13 @@ JQVMap.prototype.positionPins = function(){
     var scale = map.scale;
     var rootCoords = map.canvas.rootGroup.getBoundingClientRect();
     var mapCoords = map.container[0].getBoundingClientRect();
-    var coords = {
-      left: rootCoords.left - mapCoords.left,
-      top: rootCoords.top - mapCoords.top
-    };
 
     var middleX = (bbox.x * scale) + ((bbox.width * scale) / 2);
     var middleY = (bbox.y * scale) + ((bbox.height * scale) / 2);
 
     pinObj.css({
-      left: coords.left + middleX - (pinObj.width() / 2),
-      top: coords.top + middleY - (pinObj.height() / 2)
+      left: (rootCoords.left - mapCoords.left) + middleX - (pinObj.width() / 2),
+      top: (rootCoords.top - mapCoords.top) + middleY - (pinObj.height() / 2)
     });
   });
 };
@@ -943,8 +1019,14 @@ JQVMap.prototype.setColors = function (key, color) {
 
     for (var code in colors) {
       if (this.countries[code]) {
-        this.countries[code].setFill(colors[code]);
-        this.countries[code].setAttribute('original', colors[code]);
+        var path = this.countries[code],
+            newColor = colors[code];
+
+        var res = this.animateFill(path, newColor);
+        if(!res) {
+          path.setFill(newColor);
+          path.setAttribute('original', newColor);
+        }
       }
     }
   }
@@ -1021,7 +1103,7 @@ JQVMap.prototype.zoomIn = function () {
   var map = this;
   var sliderDelta = (jQuery('#zoom').innerHeight() - 6 * 2 - 15 * 2 - 3 * 2 - 7 - 6) / (this.zoomMaxStep - this.zoomCurStep);
 
-  if (map.zoomCurStep < map.zoomMaxStep) {
+  if (map.zoomCurStep <= map.zoomMaxStep) {
     map.transX -= (map.width / map.scale - map.width / (map.scale * map.zoomStep)) / 2;
     map.transY -= (map.height / map.scale - map.height / (map.scale * map.zoomStep)) / 2;
     map.setScale(map.scale * map.zoomStep);
@@ -1032,6 +1114,13 @@ JQVMap.prototype.zoomIn = function () {
     $slider.css('top', parseInt($slider.css('top'), 10) - sliderDelta);
 
     map.container.trigger('zoomIn');
+
+    map.zoomOutBtn.prop('disabled', false);
+    map.zoomOutBtn.css('opacity', '1');
+    if (map.zoomCurStep === map.zoomMaxStep + 1) {
+      map.zoomInBtn.prop('disabled', true);
+      map.zoomInBtn.css('opacity', '0.4');
+    }
   }
 };
 
@@ -1050,6 +1139,13 @@ JQVMap.prototype.zoomOut = function () {
     $slider.css('top', parseInt($slider.css('top'), 10) + sliderDelta);
 
     map.container.trigger('zoomOut');
+
+    map.zoomInBtn.prop('disabled', false);
+    map.zoomInBtn.css('opacity', '1');
+    if (map.zoomCurStep === 1) {
+      map.zoomOutBtn.prop('disabled', true);
+      map.zoomOutBtn.css('opacity', '0.4');
+    }
   }
 };
 
