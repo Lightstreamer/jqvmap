@@ -39,8 +39,8 @@ JQVMap.prototype.placePins = function(pins, pinMode){
     var positionFix = function(){
       map.positionPins();
     };
-    this.container.bind('zoomIn', positionFix)
-      .bind('zoomOut', positionFix)
-      .bind('drag', positionFix);
+    this.container.on('zoomIn', positionFix)
+      .on('zoomOut', positionFix)
+      .on('drag', positionFix);
   }
 };

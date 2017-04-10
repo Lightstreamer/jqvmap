@@ -66,7 +66,7 @@
 
       for (var e in apiEvents) {
         if (defaultParams[e]) {
-          this.bind(apiEvents[e] + '.jqvmap', defaultParams[e]);
+          this.on(apiEvents[e] + '.jqvmap', defaultParams[e]);
         }
       }
 

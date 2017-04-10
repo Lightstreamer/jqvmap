@@ -4,7 +4,7 @@
  * @version 1.5.1
  * @link http://jqvmap.com
  * @license https://github.com/manifestinteractive/jqvmap/blob/master/LICENSE
- * @builddate 2017/01/31
+ * @builddate 2017/04/10
  */
 
 var VectorCanvas = function (width, height, params) {
@@ -384,7 +384,7 @@ JQVMap.maps = {};
 
       for (var e in apiEvents) {
         if (defaultParams[e]) {
-          this.bind(apiEvents[e] + '.jqvmap', defaultParams[e]);
+          this.on(apiEvents[e] + '.jqvmap', defaultParams[e]);
         }
       }
 
@@ -915,9 +915,9 @@ JQVMap.prototype.placePins = function(pins, pinMode){
     var positionFix = function(){
       map.positionPins();
     };
-    this.container.bind('zoomIn', positionFix)
-      .bind('zoomOut', positionFix)
-      .bind('drag', positionFix);
+    this.container.on('zoomIn', positionFix)
+      .on('zoomOut', positionFix)
+      .on('drag', positionFix);
   }
 };
 
