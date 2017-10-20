@@ -26,6 +26,8 @@ var JQVMap = function (params) {
   this.width = params.container.width();
   this.height = params.container.height();
 
+  this.mapData = mapData;
+
   this.resize();
 
   jQuery(window).resize(function () {

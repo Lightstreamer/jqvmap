@@ -4,7 +4,7 @@
  * @version 1.5.1
  * @link http://jqvmap.com
  * @license https://github.com/manifestinteractive/jqvmap/blob/master/LICENSE
- * @builddate 2017/04/10
+ * @builddate 2017/10/20
  */
 
 var VectorCanvas = function (width, height, params) {
@@ -96,6 +96,8 @@ var JQVMap = function (params) {
 
   this.width = params.container.width();
   this.height = params.container.height();
+
+  this.mapData = mapData;
 
   this.resize();
 
